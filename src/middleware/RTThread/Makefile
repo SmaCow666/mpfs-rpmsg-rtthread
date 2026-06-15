@@ -17,6 +17,7 @@ SRCS += \
 	src/middleware/RTThread/rt-thread/src/scheduler.c \
 	src/middleware/RTThread/rt-thread/src/thread.c \
 	src/middleware/RTThread/rt-thread/src/timer.c \
+	src/middleware/RTThread/rt-thread/libcpu/risc-v/rv64/cpuport.c \
 	src/middleware/RTThread/board/board.c \
 	src/middleware/RTThread/portable/cpuport.c \
 
@@ -26,5 +27,7 @@ ASM_SRCS += \
 INCLUDES += \
 	-Isrc/middleware/RTThread/rt-thread/include \
 	-Isrc/middleware/config \
+	-Isrc/middleware/RTThread/rt-thread/libcpu/risc-v/rv64 \
+	-Isrc/middleware/RTThread/rt-thread/libcpu/risc-v/common \
 	-Isrc/middleware/RTThread/portable \
 	-Isrc/middleware/RTThread/board \
