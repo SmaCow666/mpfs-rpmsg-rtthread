@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.7] - 2026-06-15
+
+### Added
+
+- **一键编译脚本** (`build.sh`):
+  - 支持 Master/Remote/All/Clean 四种命令（`./build.sh master`、`./build.sh remote`、`./build.sh all`、`./build.sh clean`）
+  - 自动检测 RISC-V 工具链路径（SoftConsole / 系统 PATH）
+  - 并行编译（`-j$(nproc)`）
+  - HSS payload 生成步骤可选（YAML 文件存在时才执行）
+  - 编译成功校验：自动解析 ELF 文件的 text/data/bss 段大小
+
+### Fixed
+
+- **`build.sh`**: 修复 HSS payload generator 路径和 YAML 引用失效问题
+- **`CHANGELOG.md`**: 移除 v0.1 中关于 git subtree "未完成"的过时 Notes
+
+---
+
+
 ---
 
 ## [v0.5] - 2026-06-15
@@ -132,9 +151,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `src/middleware/Makefile`: 新增 `include src/middleware/RTThread/Makefile`
 
-### Notes
 
-- 网络限制导致 `git subtree add` 未完成，rt-thread/ 为手动骨架文件
+
 - 后续需在有网络环境时运行 `git subtree add` 获取完整 Nano 源码
 
 ---
@@ -142,3 +160,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [v0.0] - Baseline
 
 - 初始导入 mpfs-rpmsg-freertos 基项目（PolarFire SoC FreeRTOS + RPMsg AMP 示例）
+

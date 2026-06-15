@@ -1,0 +1,10 @@
+{
+    "terminal.integrated.profiles.windows": {
+        "msys2-mingw64": {
+            "path": "D:\\XuHuiNiu\\Environment\\msys64\\msys64\\msys2_shell.cmd",
+            "args": ["-defterm", "-here", "-no-start", "-mingw64"],
+            "icon": "terminal-bash"
+        }
+    }
+}
+// D:\XuHuiNiu\Environment\msys64\msys64\mingw64.exe
