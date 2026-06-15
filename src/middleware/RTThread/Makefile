@@ -21,7 +21,6 @@ SRCS += \
 	src/middleware/RTThread/rt-thread/src/timer.c \
 	src/middleware/RTThread/rt-thread/libcpu/risc-v/common/cpuport.c \
 	src/middleware/RTThread/board/board.c \
-	src/middleware/RTThread/portable/cpuport.c \
 
 # --- Assembly Source Files ---
 ASM_SRCS += \
@@ -32,5 +31,4 @@ INCLUDES += \
 	-Isrc/middleware/RTThread/rt-thread/include \
 	-Isrc/middleware/config \
 	-Isrc/middleware/RTThread/rt-thread/libcpu/risc-v/common \
-	-Isrc/middleware/RTThread/portable \
 	-Isrc/middleware/RTThread/board \

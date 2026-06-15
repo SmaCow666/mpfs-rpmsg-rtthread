@@ -5,41 +5,30 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2024-06-15     codex        First board port for MPFS Icicle Kit
+ * 2024-06-15     codex        Restructured to reuse MPFS HAL CLINT
  */
 
 #ifndef BOARD_H_
 #define BOARD_H_
 
-#include <stdint.h>
-
 /* ==============================================================
- * Board definitions for PolarFire SoC Icicle Kit
+ * Board header for PolarFire SoC Icicle Kit
  *
- * Mimics the layout of FreeRTOSConfig.h & demo_main.c definitions
- * for consistent SoC access.
+ * 复用策略：直接使用 MPFS HAL 的 CLINT 结构体和寄存器定义。
+ * 不自行定义 CLINT 地址宏，避免与 HAL 冲突。
  * ============================================================== */
 
-/* ---------- CLINT (Core Local Interrupter) registers ---------- */
-#define CLINT_MTIME           ((volatile uint64_t*)0x0200bff8)
-#define CLINT_MTIMECMP_BASE   ((volatile uint64_t*)0x02004000)
+#include <stdint.h>
 
-/* ---------- System clock ---------- */
-#define SYSCLK_FREQ           100000000UL    /* 100 MHz CPU clock */
-#define CLINT_FREQ            1000000UL      /* 1 MHz CLINT tick  */
+/* ---------- CLINT 时钟 ---------- */
+#define CLINT_FREQ            1000000UL      /* 1 MHz CLINT tick */
+#define OS_TICK_RATE_HZ       1000           /* RT-Thread system tick rate */
 
-/* ---------- OS Tick configuration ---------- */
-#define OS_TICK_RATE_HZ       1000
-
-/* ---------- Heap section symbols (from linker script) ---------- */
-extern unsigned char __heap_start;
-extern unsigned char __heap_end;
-
-/* ---------- UART ---------- */
+/* ---------- UART 实例 ---------- */
+extern uintptr_t g_mss_uart0_lo;
 extern uintptr_t g_mss_uart1_lo;
-extern uintptr_t g_mss_uart3_lo;
 
-/* ---------- Board initialization ---------- */
+/* ---------- 引导接口 ---------- */
 void rt_hw_board_init(void);
 
 #endif /* BOARD_H_ */
