@@ -5,7 +5,7 @@
  *
  * Change Logs:
  * Date           Author       Notes
- * 2024-06-15     codex        First port: RISC-V rv64 port header
+ * 2024-06-15                  First port: RISC-V rv64 port header
  *
  * rtt_port.h - Port macro definitions for RT-Thread on RISC-V rv64
  * Mimics FreeRTOS portmacro.h structure.
