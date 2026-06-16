@@ -38,6 +38,8 @@ SRCS += \
 	src/application/inc/pingpong_demo.c \
 	src/application/inc/console_demo.c \
 	src/application/inc/sample_echo_demo.c \
+	src/application/inc/rtt_demo.c \
+	src/application/inc/rtt_demo.c \
 
 ifdef REMOTEPROC
 SRCS += src/application/inc/rsc_table.c

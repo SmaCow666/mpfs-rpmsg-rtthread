@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.10] - 2026-06-16
+
+### Fixed
+
+- **rtt_demo.c 修复**: UART MMUART0 改为 MMUART1；添加 rthw.h 确保 rt_hw_interrupt_disable() 可见；线程栈 1024 改为 2048
+- **u54_1.c**: 补全 include inc/rtt_demo.h，确保 start_rtt_demo() 声明可见
+
+### Changed
+
+- **board.c**: rt_hw_console_output MMUART0->MMUART1（用户）
+- **board.h**: UART 实例类型 uintptr_t->mss_uart_instance_t（用户）
+- **build.sh, rpmsg_platform.c**: 用户配置调整
+- **hss-payload-rtthread.yaml**: 新增 HSS 负载配置文件
+- **Makefile**: app 新增 rtt_demo.c；RTT 移除孤儿引用
+
+---
+
 ## [v0.9] - 2026-06-16
 
 ### Fixed
@@ -51,6 +68,24 @@ t_hw_board_init() 初始化 Tick 和堆
 
 
 ---
+## [v0.6] - 2026-06-15
+
+### Added
+
+- **board.c 复用 MPFS HAL 实现**: Tick 通过 SysTick_Config() 完成；覆写 U54_1_sysTick_IRQHandler()；rt_hw_console_output() 绑定 MSS UART；堆使用 __bss_end ~ _end + 512KB
+- **CHANGELOG 补全**: 新增 v0.2~v0.5 条目
+
+### Changed
+
+- `board.h`: 简化，移除与 HAL 重复的 CLINT 地址宏
+- `Makefile`: 移除 portable/cpuport.c 存根引用
+
+### Removed
+
+- `portable/cpuport.c`, `portable/rtt_port.h`: 手工存根，官方 port 已覆盖
+
+---
+
 
 ## [v0.5] - 2026-06-15
 

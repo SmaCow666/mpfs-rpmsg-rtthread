@@ -19,14 +19,15 @@
  * ============================================================== */
 
 #include <stdint.h>
+// #include "src/platform/drivers/mss/mss_mmuart/mss_uart.h"
 
 /* ---------- CLINT 时钟 ---------- */
 #define CLINT_FREQ            1000000UL      /* 1 MHz CLINT tick */
 #define OS_TICK_RATE_HZ       1000           /* RT-Thread system tick rate */
 
 /* ---------- UART 实例 ---------- */
-extern uintptr_t g_mss_uart0_lo;
-extern uintptr_t g_mss_uart1_lo;
+extern mss_uart_instance_t  g_mss_uart0_lo;
+extern mss_uart_instance_t  g_mss_uart1_lo;
 
 /* ---------- 引导接口 ---------- */
 void rt_hw_board_init(void);

@@ -83,7 +83,7 @@ void rt_hw_board_init(void)
      * 堆结束 → 在 _end 基础上追加 512KB
      * 此区域在链接脚本中未被显式使用，可以安全分配。
      */
-    extern unsigned char __bss_end;
+    extern unsigned long __bss_end;
     extern unsigned char _end;
     rt_system_heap_init(
         (void *)&__bss_end,
@@ -104,6 +104,6 @@ void rt_hw_board_init(void)
  * ============================================================ */
 void rt_hw_console_output(const char *str)
 {
-    /* 使用 MMUART0 作为控制台输出 */
-    MSS_UART_polled_tx_string(&g_mss_uart0_lo, str);
+    /* 使用 MMUART1 作为控制台输出 */
+    MSS_UART_polled_tx_string(&g_mss_uart1_lo, str);
 }

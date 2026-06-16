@@ -20,7 +20,7 @@
 #include "timers.h"
 #include "semphr.h"
 #else
-#include "utils.h"
+// #include "utils.h"
 #endif
 
 #ifdef REMOTEPROC
