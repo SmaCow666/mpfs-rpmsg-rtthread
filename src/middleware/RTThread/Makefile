@@ -1,4 +1,4 @@
-﻿#
+#
 # RT-Thread Nano support
 #
 # Mimics the FreeRTOS Makefile integration pattern:
@@ -21,6 +21,7 @@ SRCS += \
 	src/middleware/RTThread/rt-thread/src/timer.c \
 	src/middleware/RTThread/rt-thread/libcpu/risc-v/common/cpuport.c \
 	src/middleware/RTThread/board/board.c \
+	src/middleware/RTThread/board/rtt_demo.c \
 
 # --- Assembly Source Files ---
 ASM_SRCS += \
