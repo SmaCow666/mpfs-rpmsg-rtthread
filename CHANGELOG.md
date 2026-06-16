@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [v0.9] - 2026-06-16
+
+### Fixed
+
+- **`src/middleware/Makefile` BOM 修复**: 移除 UTF-8 BOM (0xEF BB BF)，解决 make 解析时报 "missing separator" 错误
+- **全量 Makefile 编码验证**: 所有 Makefile 无 BOM、无 NUL，均为纯 ASCII
+
+---
+
 ## [v0.8] - 2026-06-16
 
 ### Added
@@ -12,7 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **RT-Thread Nano 启动测试 Demo** (oard/rtt_demo.c):
   - 实现 start_rtt_demo() 启动测试函数
   - Step 1: 初始化 MMUART0 控制台 (115200-8N1) + PLIC
-  - Step 2: 调 t_hw_board_init() 初始化 Tick 和堆
+  - Step 2: 调 
+t_hw_board_init() 初始化 Tick 和堆
   - Step 3: 关 MIE（折衷 SysTick_Config 过早开 MIE）
   - Step 4: 初始化调度器和定时器子系统
   - Step 5: 创建两个测试线程（1 秒和 0.5 秒间隔打印）
