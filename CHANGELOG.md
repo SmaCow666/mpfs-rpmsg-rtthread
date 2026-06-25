@@ -1,24 +1,81 @@
-﻿# Changelog
+# Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+
+## [v1.0] - 2026-06-24
+
+### Added
+
+- **SPSC ring buffer module** (board/ringbuf.h/c):
+  - Lock-free single-producer/single-consumer, ISR-safe
+  - TX instance (512B): rt_hw_console_output -> con print thread -> UART
+  - RX instance (64B): UART ISR _uart_rx_handler -> FinSH input
+
+- **Background print thread** (board/board.c):
+  - console_print_entry() at lowest priority, blocks on semaphore
+  - rt_hw_console_output() writes to TX ring buffer, releases semaphore
+
+- **UART RX interrupt-driven input** (board/board.c):
+  - _uart_rx_handler() registered via MSS_UART_set_rx_handler()
+  - MSS_UART_get_rx() drains FIFO into RX ring buffer
+  - Local interrupt path: MSS_UART_enable_local_irq()
+
+- **RTT context format conversion** (mss_entry.S):
+  - #ifdef USING_RTTHREAD: in-place HAL frame to RTT frame conversion
+  - Flag check after jal trap_from_machine_mode
+  - Restored missing restore_regs: label
+
+- **FinSH/MSH console**:
+  - rtconfig.h: added FINSH_USING_SYMTAB, FINSH_USING_DESCRIPTION
+  - rt_hw_console_getchar() reads from RX ring buffer
+  - finsh_system_init() called before rt_system_scheduler_start()
+
+- **Linker script extensions** (master + remote):
+  - .rti_fn sections: __rt_init_rti_start/end + KEEP(SORT(.rti_fn*))
+  - FSymTab sections: __fsymtab_start/end + KEEP(FSymTab*)
+
+- **Documents** (doc/):
+  - v0.11 scheduler hang analysis
+  - v0.12 context format fix guide
+
+### Fixed
+
+- **Scheduler hang**: U54_1_sysTick_IRQHandler added rt_interrupt_enter/leave
+- **UART ISR ASSERT**: Removed dual-path conflict (MSS_UART_enable_local_irq + MIP_MEIP)
+- **Empty FinSH command table**: FSymTab section added KEEP() in linker script
+- **INIT_APP_EXPORT broken**: finsh_system_init called directly before scheduler start
+- **Dead code**: finsh_system_init moved before scheduler start
+- **cmd.c compile error**: Removed extra quotes from MSH_CMD_EXPORT descriptions
+
+### Changed
+
+- Build system: Makefile added ringbuf.c, shell.c, msh.c etc.
+- Configuration: rtconfig.h FinSH config; mss_sw_config.h user config
+
+### Removed
+
+- Empty placeholder: libcpu/risc-v/polarfire/interrupt_gcc.s (0 bytes)
+
+---
+
 ## [v0.10] - 2026-06-16
 
 ### Fixed
 
-- **rtt_demo.c 修复**: UART MMUART0 改为 MMUART1；添加 rthw.h 确保 rt_hw_interrupt_disable() 可见；线程栈 1024 改为 2048
-- **u54_1.c**: 补全 include inc/rtt_demo.h，确保 start_rtt_demo() 声明可见
+- **rtt_demo.c fix**: Changed UART from MMUART0 to MMUART1; added rthw.h for rt_hw_interrupt_disable() visibility; thread stack 1024 -> 2048
+- **u54_1.c**: Added include for rtt_demo.h to make start_rtt_demo() declaration visible
 
 ### Changed
 
-- **board.c**: rt_hw_console_output MMUART0->MMUART1（用户）
-- **board.h**: UART 实例类型 uintptr_t->mss_uart_instance_t（用户）
-- **build.sh, rpmsg_platform.c**: 用户配置调整
-- **hss-payload-rtthread.yaml**: 新增 HSS 负载配置文件
-- **Makefile**: app 新增 rtt_demo.c；RTT 移除孤儿引用
+- **board.c**: rt_hw_console_output MMUART0 -> MMUART1 (user config)
+- **board.h**: UART instance type uintptr_t -> mss_uart_instance_t (user config)
+- **build.sh, rpmsg_platform.c**: User configuration adjustments
+- **hss-payload-rtthread.yaml**: Added HSS payload configuration file
+- **Makefile**: Added rtt_demo.c to app; removed orphan RTT references
 
 ---
 
@@ -26,8 +83,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **`src/middleware/Makefile` BOM 修复**: 移除 UTF-8 BOM (0xEF BB BF)，解决 make 解析时报 "missing separator" 错误
-- **全量 Makefile 编码验证**: 所有 Makefile 无 BOM、无 NUL，均为纯 ASCII
+- **`src/middleware/Makefile` BOM fix**: Removed UTF-8 BOM (0xEF BB BF) to fix make "missing separator" error
+- **Full Makefile encoding audit**: All Makefiles verified clean (no BOM, no NUL, pure ASCII)
 
 ---
 
@@ -35,16 +92,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **RT-Thread Nano 启动测试 Demo** (oard/rtt_demo.c):
-  - 实现 start_rtt_demo() 启动测试函数
-  - Step 1: 初始化 MMUART0 控制台 (115200-8N1) + PLIC
-  - Step 2: 调 
-t_hw_board_init() 初始化 Tick 和堆
-  - Step 3: 关 MIE（折衷 SysTick_Config 过早开 MIE）
-  - Step 4: 初始化调度器和定时器子系统
-  - Step 5: 创建两个测试线程（1 秒和 0.5 秒间隔打印）
-  - Step 6: 启动调度器（不返回）
-- **src/middleware/RTThread/Makefile**: 新增 rtt_demo.c 编译
+- **RT-Thread Nano startup test demo** (board/rtt_demo.c):
+  - Implemented start_rtt_demo() startup test function
+  - Step 1: Init MMUART0 console (115200-8N1) + PLIC
+  - Step 2: Call rt_hw_board_init() for Tick and heap init
+  - Step 3: Disable MIE (workaround for SysTick_Config early MIE enable)
+  - Step 4: Init scheduler and timer subsystems
+  - Step 5: Create two test threads (1s and 0.5s print intervals)
+  - Step 6: Start scheduler (never returns)
+- **src/middleware/RTThread/Makefile**: Added rtt_demo.c compilation
 
 ---
 
@@ -52,67 +108,63 @@ t_hw_board_init() 初始化 Tick 和堆
 
 ### Added
 
-- **一键编译脚本** (`build.sh`):
-  - 支持 Master/Remote/All/Clean 四种命令（`./build.sh master`、`./build.sh remote`、`./build.sh all`、`./build.sh clean`）
-  - 自动检测 RISC-V 工具链路径（SoftConsole / 系统 PATH）
-  - 并行编译（`-j$(nproc)`）
-  - HSS payload 生成步骤可选（YAML 文件存在时才执行）
-  - 编译成功校验：自动解析 ELF 文件的 text/data/bss 段大小
+- **One-click build script** (`build.sh`):
+  - Supports Master/Remote/All/Clean commands (`./build.sh master`, `./build.sh remote`, `./build.sh all`, `./build.sh clean`)
+  - Auto-detects RISC-V toolchain path (SoftConsole / system PATH)
+  - Parallel build (`-j$(nproc)`)
+  - Optional HSS payload generation (only if YAML file exists)
+  - Build validation: auto-parses ELF text/data/bss section sizes
 
 ### Fixed
 
-- **`build.sh`**: 修复 HSS payload generator 路径和 YAML 引用失效问题
-- **`CHANGELOG.md`**: 移除 v0.1 中关于 git subtree "未完成"的过时 Notes
+- **`build.sh`**: Fixed HSS payload generator path and YAML reference issues
+- **`CHANGELOG.md`**: Removed outdated v0.1 git subtree notes
 
 ---
 
-
----
 ## [v0.6] - 2026-06-15
 
 ### Added
 
-- **board.c 复用 MPFS HAL 实现**: Tick 通过 SysTick_Config() 完成；覆写 U54_1_sysTick_IRQHandler()；rt_hw_console_output() 绑定 MSS UART；堆使用 __bss_end ~ _end + 512KB
-- **CHANGELOG 补全**: 新增 v0.2~v0.5 条目
+- **board.c reuse MPFS HAL**: Tick via SysTick_Config(); override U54_1_sysTick_IRQHandler(); rt_hw_console_output() mapped to MSS UART; heap from __bss_end to _end + 512KB
+- **CHANGELOG completion**: Added v0.2 ~ v0.5 entries
 
 ### Changed
 
-- `board.h`: 简化，移除与 HAL 重复的 CLINT 地址宏
-- `Makefile`: 移除 portable/cpuport.c 存根引用
+- `board.h`: Simplified, removed CLINT address macros duplicated with HAL
+- `Makefile`: Removed portable/cpuport.c stub reference
 
 ### Removed
 
-- `portable/cpuport.c`, `portable/rtt_port.h`: 手工存根，官方 port 已覆盖
+- `portable/cpuport.c`, `portable/rtt_port.h`: Manual stubs removed; official RTT port covers these
 
 ---
-
 
 ## [v0.5] - 2026-06-15
 
 ### Added
 
-- **平台层存量驱动复用方案**（`doc/rtt-nano-porting-guide.md` 补充章节）:
-  - 新增「第二点五部分：平台层存量驱动复用方案」（7 个子节，~300 行）
-  - Tick 定时器完全复用 HAL 链路: `SysTick_Config()` → `handle_m_timer_interrupt()` → `U54_1_sysTick_IRQHandler()`
-  - Trap/异常处理完全由平台层 `mtvec` → `trap_vector` → `trap_from_machine_mode()` 链路承担
-  - UART 控制台直接调用已编译的 MSS UART 裸机驱动
-  - 可复用性总表涵盖 10 个功能模块的复用方式
-  - 总结：真正需要编写的板级代码仅 ~25 行
+- **Platform layer driver reuse** (`doc/rtt-nano-porting-guide.md` supplement):
+  - Added section 2.5: Platform driver reuse scheme (7 subsections, ~300 lines)
+  - Tick timer fully reuses HAL chain: SysTick_Config() -> handle_m_timer_interrupt() -> U54_1_sysTick_IRQHandler()
+  - Trap/exception handling fully by platform layer: mtvec -> trap_vector -> trap_from_machine_mode()
+  - UART console directly calls compiled MSS UART bare-metal driver
+  - Reuse summary table covering 10 functional modules
+  - Conclusion: only ~25 lines of board code actually needed
 
 ### Changed
 
-- **`board/board.c`** — 重写为 HAL 复用方案:
-  - 直接使用 `mpfs_hal/mss_hal.h` 头文件访问 CLINT 结构体
-  - Tick 初始化通过 `SysTick_Config()` 完成，不再手动操作寄存器
-  - Tick 中断通过 weak 函数 `U54_1_sysTick_IRQHandler()` 钩入 HAL 链路
-  - 控制台输出通过 `rt_hw_console_output()` 绑定到 MMS UART 裸机驱动
-
-- **`board/board.h`** — 简化，移除与 HAL 重复的 CLINT 地址宏定义
+- **`board/board.c`** - Rewritten with HAL reuse:
+  - Uses mpfs_hal/mss_hal.h directly for CLINT structure access
+  - Tick init via SysTick_Config(), no manual register operations
+  - Tick ISR hooks into HAL chain via weak function U54_1_sysTick_IRQHandler()
+  - Console output bound to MSS UART via rt_hw_console_output()
+- **`board/board.h`** - Simplified, removed CLINT address macros duplicated with HAL
 
 ### Removed
 
-- **`portable/cpuport.c`** 和 `portable/rtt_port.h` — 手工存根，rt-thread 官方 port 文件已覆盖其功能
-- **Makefile 中引用上述存根的行**
+- **`portable/cpuport.c`** and **`portable/rtt_port.h`** - Manual stubs removed; covered by official RTT port files
+- **Makefile**: Removed stub references
 
 ---
 
@@ -120,22 +172,22 @@ t_hw_board_init() 初始化 Tick 和堆
 
 ### Added
 
-- **平台层架构文档**（`doc/platform-layer-architecture.md`）:
-  - HAL 层 API 接口（CLINT/PLIC/PMP/MPU/L2 Cache）
-  - MSS 外设驱动 API 表（15 个 MSS 外设 + 4 个 FPGA IP 驱动）
-  - 启动代码流程（mss_entry.S → system_startup.c → 用户入口）
-  - 驱动启用指南（当前编译状态 + 新增驱动 Makefile 示例）
-  - 关键硬件地址映射附录
+- **Platform architecture doc** (`doc/platform-layer-architecture.md`):
+  - HAL API interfaces (CLINT/PLIC/PMP/MPU/L2 Cache)
+  - MSS peripheral driver API table (15 MSS peripherals + 4 FPGA IP drivers)
+  - Boot flow: mss_entry.S -> system_startup.c -> user entry
+  - Driver enable guide (build status + Makefile examples)
+  - Key hardware address map appendix
 
 ### Fixed
 
-- **`rules.mk`** — 从初始提交 `v0.0` 恢复，修正 v0.1 中因管道编码问题导致的文件清空
-- **`doc/rtt-nano-porting-guide.md`** — 全文重写:
-  - 删除所有 `-DUSING_RTTHREAD` 引用（该宏未在 `rules.mk` 中定义）
-  - 将定位从 AMP 多核改为单 U54 核运行
-  - 新增完整调用链（应用层 → RT-Thread 内核 → 移植层 → 硬件）
-  - 新增适配原因分析：每步包含「为什么要做？」+「后果」
-  - 修正定时器 ISR 入口描述
+- **`rules.mk`** - Restored from v0.0 initial commit, fixed pipe encoding corruption from v0.1
+- **`doc/rtt-nano-porting-guide.md`** - Full rewrite:
+  - Removed all -DUSING_RTTHREAD references (macro not defined in rules.mk)
+  - Changed target from AMP multi-core to single U54 core operation
+  - Added complete call chain (app -> RTT kernel -> port layer -> hardware)
+  - Added adaptation reasoning: each step explains why + consequences
+  - Fixed timer ISR entry description
 
 ---
 
@@ -143,23 +195,22 @@ t_hw_board_init() 初始化 Tick 和堆
 
 ### Added
 
-- **RT-Thread Nano 详细移植指南**（`doc/rtt-nano-porting-guide.md`）:
-  - Step 1~8 逐步移植逻辑，每步含核心需求、目标、当前状态
-  - 最小启动移植目标 + 完整版本移植目标（Minimal/Full Version Target）
-  - FreeRTOS ↔ RT-Thread API 对照表
-  - 硬件地址附录、调试检查清单、配置建议
+- **Detailed RTT Nano porting guide** (`doc/rtt-nano-porting-guide.md`):
+  - Step 1-8 porting logic, each with core requirements, targets, status
+  - Minimal boot target + full version target
+  - FreeRTOS <-> RT-Thread API mapping table
+  - Hardware address appendix, debug checklist, config suggestions
 
 ### Fixed
 
-- **`rt-thread/` 目录嵌套修复** — 将 `rt-thread/rt-thread/*` 内容上移至 `rt-thread/`，`context_gcc.S`
-  和 `cpuport.c` 路径从 `rv64/` 修正为 `risc-v/common/`
-- **`doc/freertos-port-architecture-analysis.md`** — 规范化标题和表述
-  - 删除所有原始 C/ASM/Makefile 代码引用
-  - 用表格/流程图/关系图替代原始代码块
+- **`rt-thread/` directory nesting fix** - Moved rt-thread/rt-thread/* up to rt-thread/; fixed context_gcc.S and cpuport.c paths from rv64/ to risc-v/common/
+- **`doc/freertos-port-architecture-analysis.md`** - Standardized titles and wording:
+  - Removed all raw C/ASM/Makefile code references
+  - Replaced code blocks with tables/flowcharts/diagrams
 
 ### Changed
 
-- **`src/middleware/RTThread/Makefile`** — 源文件路径更新为 `libcpu/risc-v/common/`
+- **`src/middleware/RTThread/Makefile`** - Updated source paths to libcpu/risc-v/common/
 
 ---
 
@@ -167,15 +218,14 @@ t_hw_board_init() 初始化 Tick 和堆
 
 ### Added
 
-- **git subtree 引入 `rtthread-nano` 源码**:
-  - 用户通过 `git subtree add --prefix=src/middleware/RTThread/rt-thread`
-    `https://github.com/RT-Thread/rtthread-nano.git master --squash` 完成
-  - 包含 `src/`（内核源码）、`include/`（内核头文件）、`libcpu/`（RISC-V 移植层）
-  - 另含 `bsp/`（板级参考）、`components/finsh`（FinSH 控制台源码）
+- **git subtree import of rtthread-nano source**:
+  - User ran `git subtree add --prefix=src/middleware/RTThread/rt-thread` `https://github.com/RT-Thread/rtthread-nano.git master --squash`
+  - Includes src/ (kernel source), include/ (kernel headers), libcpu/ (RISC-V port layer)
+  - Also includes bsp/ (board references), components/finsh (FinSH console source)
 
 ### Fixed
 
-- **清理 v0.1 手工存根**: 删除旧 `rt-thread/` 目录中的手动创建 stub 文件，为 git subtree 清理路径
+- **Clean v0.1 stubs**: Removed manually created stub files from old rt-thread/ directory, clearing path for git subtree
 
 ---
 
@@ -183,42 +233,37 @@ t_hw_board_init() 初始化 Tick 和堆
 
 ### Added
 
-- **RT-Thread Nano 移植骨架**: 在 `src/middleware/RTThread/` 下创建了完整的 RT-Thread Nano 移植骨架。
+- **RT-Thread Nano port skeleton**: Created complete RT-Thread Nano port skeleton under src/middleware/RTThread/.
 
-  - **构建系统集成** (`src/middleware/RTThread/Makefile`):
-    - 通过 `SRCS +=` / `ASM_SRCS +=` / `INCLUDES +=` 模式集成
-    - 在 `src/middleware/Makefile` 中新增 `include`
+  - **Build system integration** (`src/middleware/RTThread/Makefile`):
+    - Integration via SRCS += / ASM_SRCS += / INCLUDES += pattern
+    - Added include in src/middleware/Makefile
 
-  - **配置文件** (`src/middleware/config/rtconfig.h`):
-    - 优先级数 31，Tick 频率 1000Hz，堆大小 512KB
-    - 启用信号量/互斥量/事件/邮箱/消息队列等 IPC 机制
+  - **Configuration** (`src/middleware/config/rtconfig.h`):
+    - 31 priorities, 1000Hz tick, 512KB heap
+    - Enabled semaphore/mutex/event/mailbox/message queue IPC
 
-  - **板级支持** (`board/board.c` / `board.h`):
-    - OS Tick 定时器初始化（CLINT MTimer）
-    - 堆内存初始化
-    - 板级硬件初始化框架
+  - **Board support** (`board/board.c` / `board.h`):
+    - OS Tick timer init (CLINT MTimer)
+    - Heap memory initialization
+    - Board hardware init framework
 
-  - **CPU 移植层**:
-    - `rtt_port.h`: 移植宏定义（临界区管理、类型定义）
-    - `context_switch.S`: 汇编上下文切换
-    - `cpuport.c`: 线程栈初始化（rt_hw_stack_init）
+  - **CPU port layer**:
+    - rtt_port.h: Port macros (critical section management, type definitions)
+    - context_switch.S: Assembly context switch
+    - cpuport.c: Thread stack init (rt_hw_stack_init)
 
-  - **RPMsg-Lite 环境适配** (`rpmsg_env_rtthread.c`): 占位文件
+  - **RPMsg-Lite environment adapter** (`rpmsg_env_rtthread.c`): Placeholder
 
-- **架构分析文档** (`doc/freertos-port-architecture-analysis.md`):
-  - 梳理 FreeRTOS 移植架构（目录组织、构建系统、CPU 移植层、配置管理、应用层启动流程）
+- **Architecture analysis doc** (`doc/freertos-port-architecture-analysis.md`):
+  - FreeRTOS port architecture overview (directory structure, build system, CPU port, configuration, app startup flow)
 
 ### Changed
 
-- `src/middleware/Makefile`: 新增 `include src/middleware/RTThread/Makefile`
-
-
-
-- 后续需在有网络环境时运行 `git subtree add` 获取完整 Nano 源码
+- `src/middleware/Makefile`: Added include src/middleware/RTThread/Makefile
 
 ---
 
 ## [v0.0] - Baseline
 
-- 初始导入 mpfs-rpmsg-freertos 基项目（PolarFire SoC FreeRTOS + RPMsg AMP 示例）
-
+- Initial import of mpfs-rpmsg-freertos base project (PolarFire SoC FreeRTOS + RPMsg AMP example)

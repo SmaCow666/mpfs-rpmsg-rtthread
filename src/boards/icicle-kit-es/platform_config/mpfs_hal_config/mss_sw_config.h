@@ -121,6 +121,7 @@
  * will be used */
 #define HART0_TICK_RATE_MS  5UL
 #define HART1_TICK_RATE_MS  5UL
+// #define HART1_TICK_RATE_MS  100UL /* Slow down tick for RT-Thread demo */
 #define HART2_TICK_RATE_MS  5UL
 #define HART3_TICK_RATE_MS  5UL
 #define HART4_TICK_RATE_MS  5UL

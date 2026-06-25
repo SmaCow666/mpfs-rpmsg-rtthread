@@ -2,3 +2,9 @@
 /Remote-Default
 /core
 payload.bin
+
+doc/
+*.o
+*.elf
+*.bin
+*.sym

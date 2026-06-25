@@ -1,135 +1,87 @@
-# PolarFire SoC RPMsg FreeRTOS Example
+# RT-Thread Nano BSP for PolarFire SoC Icicle Kit
 
-This project contains a number of applications demos that showcase the usage of RPMsg (Remote Processor Messaging) framework to send messages between a FreeRTOS context and a remote software context (i.e. Linux, bare metal or another FreeRTOS context) using the RPMsg-lite framework.
+RT-Thread Nano real-time operating system port for the Microchip PolarFire SoC (MPFS250T) Icicle Kit, running on a single U54 core in machine mode.
 
-This project contains two different build configurations:
+This project is derived from [mpfs-rpmsg-freertos](https://github.com/polarfire-soc/mpfs-rpmsg-freertos) and replaces FreeRTOS with RT-Thread Nano while reusing the existing MPFS HAL and RPMsg-Lite framework.
 
-- Remote Build Configuration: Builds an application in RPMsg Remote mode
+## Features
 
-- Master Build Configuration: Builds an application in RPMsg Master mode
+- **RT-Thread Nano v4.1.0** kernel running on U54_1 (single core, machine mode)
+- **Hardware timer** via CLINT MTimer (HAL `SysTick_Config()` chain)
+- **UART console** (MMUART1, 115200-8N1) with interrupt-driven RX and background-thread TX
+- **FinSH/MSH shell** for interactive command-line debugging
+- **SPSC ring buffer** for lock-free ISR-safe UART I/O
+- **RPMsg-Lite** framework integration (master/remote AMP communication)
+- **Build system**: GNU Make, compatible with SoftConsole and command-line builds
 
-Different combinations of operating systems can be supported in a master and remote role. For instance:
-
-- FreeRTOS + FreeRTOS
-
-- FreeRTOS + Bare Metal
-
-- Linux + FreeRTOS
-
-The project can be compiled using SoftConsole or externally by using the provided Makefile.
-This allows to integrate and build the application in Yocto and Buildroot environments.
-
-## How to build this example
-### Linux + FreeRTOS AMP configuration
-
-When using this AMP configuration, this project should be build with remoteproc support.
-
-Remoteproc allows control over the life cycle (start, stop and load firmware) the remote context from Linux.
-For more information on remoteproc support on PolarFire SoC, please refer to the [remoteproc documentation](https://mi-v-ecosystem.github.io/redirects/asymmetric-multiprocessing_remoteproc).
-
-This project is automatically built with remoteproc support by Yocto and Buildroot when using the Icicle Kit AMP machine.
-
-The application is configured to run from DDR on U54_4 application core.
-
-Instructions on how to build and run the Linux + FreeRTOS demo are available in the [AMP documentation](https://mi-v-ecosystem.github.io/redirects/asymmetric-multiprocessing_amp).
-
-### FreeRTOS + FreeRTOS AMP Configuration
-
-This project can be used to build a FreeRTOS (RPMsg Master) + FreeRTOS (RPMsg Remote) AMP Configuration.
-
-To build a FreeRTOS + FreeRTOS AMP configuration:
-
-1. Build the mpfs-rpmsg-freertos project in `Master` build mode configuration
-
-2. Build the mpfs-rpmsg-freertos project in `Remote` build mode configuration
-
-3. Generate a payload using the reference `hss-payload-freertos_freertos.yaml` available in the resources directory:
+## Directory Structure
 
 ```
-    $ cd polarfire-soc-amp-examples/resources
-    $ hss-payload-generator -c hss-payload-freertos_freertos.yaml payload_freertos_freertos.bin
+src/
+  application/          User application code (start_rtt_demo, test threads)
+  middleware/
+    FreeRTOS/           Original FreeRTOS port (retained for reference)
+    RTThread/           RT-Thread Nano port
+      rt-thread/        Kernel source (git subtree from rtthread-nano repo)
+      board/            Board-level support (board.c/h, ringbuf.h/c)
+      components/       Shell, commands
+    config/             Kernel configuration (rtconfig.h)
+    rpmsg/              RPMsg-Lite framework
+  platform/
+    mpfs_hal/           Microchip MPFS HAL (bare-metal drivers)
+    drivers/            MSS peripheral drivers (UART, GPIO, etc.)
+  boards/               Board configuration, linker scripts
 ```
 
-4. Flash the payload from the tools/ directory to eMMC or SD-card using a tool such as USBImager or, for example, using dd on Linux:
+## Quick Start
 
-```
-sudo dd if=payload_freertos_freertos.bin of=/dev/sdX
-```
-> Be very careful while picking /dev/sdX device! Look at dmesg, lsblk, GNOME Disks, etc. before and after plugging in your USB flash device/uSD/SD to find a proper device. Double check it to avoid overwriting any of system disks/partitions!
+### Prerequisites
 
-Detailed instructions on how to build the FreeRTOS + FreeRTOS RPMsg demo are available in the "FreeRTOS + FreeRTOS RPMsg Communication" section of the [RPMsg documentation](https://mi-v-ecosystem.github.io/redirects/asymmetric-multiprocessing_rpmsg).
+- RISC-V toolchain (riscv64-unknown-elf-gcc, included with SoftConsole)
+- GNU Make
+- Hart Software Services (HSS) for Icicle Kit
+- Microchip SoftConsole (optional, for IDE debugging)
 
-### FreeRTOS + BM AMP Configuration
+### Building
 
-This project can also be used to build a FreeRTOS + Bare Metal AMP Configuration.
-
-To build a FreeRTOS + BM AMP configuration:
-
-1. Build the mpfs-rpmsg-freertos project in `Master` build mode configuration
-
-2. Build the mpfs-rpmsg-bm project in `Remote` build mode configuration
-
-3. Generate a payload using the reference `hss-payload-freertos_bm.yaml` available in the resources directory:
-
-```
-    $ cd polarfire-soc-amp-examples/resources
-    $ hss-payload-generator -c hss-payload-freertos_bm.yaml payload_freertos_bm.bin
+```bash
+# Build the RT-Thread master application (U54_1)
+./build.sh
 ```
 
-4. Flash the payload from the tools/ directory to eMMC or SD-card using a tool such as USBImager or, for example, using dd on Linux:
+The build script auto-detects the RISC-V toolchain (SoftConsole path or system PATH).
+
+### Running
+
+1. Generate an HSS payload containing the built ELF file
+2. Flash to SD card or Use Flash Pro
+3. Boot the Icicle Kit - the RT-Thread application starts automatically on U54_1
+4. Connect to MMUART1 (115200-8N1) for the FinSH console
+
+## Console Output
+
+On successful boot, the serial console shows:
 
 ```
-sudo dd if=payload_freertos_bm.bin of=/dev/sdX
-```
-> Be very careful while picking /dev/sdX device! Look at dmesg, lsblk, GNOME Disks, etc. before and after plugging in your USB flash device/uSD/SD to find a proper device. Double check it to avoid overwriting any of system disks/partitions!
-
-Detailed instructions on how to build the FreeRTOS + Bare Metal RPMsg demo are available in the "FreeRTOS + Bare Metal RPMsg Communication" section of the [RPMsg documentation](https://mi-v-ecosystem.github.io/redirects/asymmetric-multiprocessing_rpmsg).
-
-#### (Optional) Building the project using the Makefile<a name="makefile-build"></a>
-
-If building the project outside of SoftConsole by using the provided Makefile, the system PATH must be configured to include the location of a RISC-V toolchain and Python version 3.x.
-
-For example, to use SoftConsole built-in RISC-V toolchain:
-
-On Linux:
-```
-$ export PATH=$PATH:<SC_INSTALL_DIR>/python3/bin:<SC_INSTALL_DIR>/riscv-unknown-elf-gcc/bin
-$ cd polarfire-soc-amp-examples/mpfs-rpmsg-freertos
-$ make
+"RT - Thread  version"
+msh />
 ```
 
-where `<SC_INSTALL_DIR>` is as a placeholder for the actual SoftConsole install directory. For example `$HOME/Microchip/SoftConsole-v2021.3-7.0.0.599`.
+The `msh />` prompt indicates the FinSH shell is ready. Type `help` for available commands.
 
-On Windows:
+## UART Configuration
 
-For building on Windows from the command line one must configure the path appropriately, e.g.:
-```
-C:\> path %SystemRoot%;%SystemRoot%;<SC_INSTALL_DIR>\build_tools\bin;<SC_INSTALL_DIR>\python3;<SC_INSTALL_DIR>\riscv-unknown-elf-gcc\bin
-C:\> cd polarfire-soc-amp-examples\mpfs-rpmsg-freertos
-C:\> make
-```
+| Parameter | Value |
+|-----------|-------|
+| UART Instance | MMUART1 |
+| Baud Rate | 115200 |
+| Data Bits | 8 |
+| Parity | None |
+| Stop Bits | 1 |
+| TX | Background thread + ring buffer (non-blocking) |
+| RX | Interrupt-driven via PLIC/local interrupt |
 
-where `<SC_INSTALL_DIR>` is as a placeholder for the actual SoftConsole install directory. For example `C:\Microchip\SoftConsole-v2021.3-7.0.0.599`.
+## License
 
-## How to debug the application in DDR
-
-The application is configured to run from DDR. It must be loaded to DDR using a previous stage program such as the HSS.
-
-Pre-requisites: the Hart Software Services (HSS) should be built and loaded to the Icicle Kit before following the debugging steps described below.
-
-1. Generate a HSS payload containing the mpfs-rpmsg-remote or rpmsg-remote-master ELF file. Please see the "PolarFire SoC RPMsg on FreeRTOS/Bare Metal documentation" section in the [RPMsg documentation](https://mi-v-ecosystem.github.io/redirects/asymmetric-multiprocessing_rpmsg) for instructions on how to generate a HSS AMP payload
-
-2. Flash the generated payload in a non-volatile off chip memory such as eMMC or SD-card
-
-3. On power-on, the Icicle Kit should boot the HSS and start the RPMsg FreeRTOS application
-
-4. Connect using the "mpfs-rpmsg-freertos hw one-hart attach master" for debugging the RPMsg master application or "mpfs-rpmsg-freertos hw one-hart attach remote" debug configuration for debugging the RPMsg remote configuration.
-
-5. Add any breakpoints as desired
-
-6. Press resume button on the debugger
-
-8. The FreeRTOS RPMsg example project should continue running and displaying messages over the associated UART
-
-For more information about AMP and inter-hart communication using RPMsg on PolarFire SoC, please refer to the [PolarFire SoC RPMsg documentation](https://mi-v-ecosystem.github.io/redirects/asymmetric-multiprocessing_rpmsg).
-
+This project inherits the MIT license from the original mpfs-rpmsg-freertos base.
+See the [LICENSE](LICENSE) file for details.

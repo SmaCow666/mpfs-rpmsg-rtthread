@@ -142,7 +142,7 @@
 // <h>Enable FinSH Configuration
 // <c1>include shell config
 //  <i> Select this choice if you using FinSH
-#include "finsh_config.h"
+// #include "finsh_config.h"
 // </c>
 // </h>
 

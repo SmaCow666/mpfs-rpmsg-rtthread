@@ -3,130 +3,79 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  *
- * Change Logs:
- * Date           Author       Notes
- * 2024-06-15     rtthread     The first version of RT-Thread Nano config
+ * RT-Thread Configuration for PolarFire SoC (Icicle Kit)
+ * Single-core, RISC-V 64-bit, Machine-mode
  */
 
-#ifndef RTCONFIG_H
-#define RTCONFIG_H
+#ifndef RT_CONFIG_H__
+#define RT_CONFIG_H__
 
-/* ==============================================================
- * RT-Thread Nano Configuration for PolarFire SoC Icicle Kit
- *
- * This configuration mirrors FreeRTOSConfig.h in the same
- * middleware/config/ directory to maintain consistent OS parameters
- * for AMP comparisons.
- * ============================================================== */
+/* RT-Thread Version */
+#define RT_THREAD_VERSION       "v4.1.0"
 
-/* ======================== Kernel ============================ */
+/* Architecture */
+#define ARCH_CPU_64BIT
 
-/* The maximum number of priorities. max: 256 */
-#define RT_THREAD_PRIORITY_MAX  31
-
-/* Tick frequency (Hz). OS tick period = 1000 / RT_TICK_PER_SECOND ms */
+/* Clock & Tick */
 #define RT_TICK_PER_SECOND      1000
-
-/* Alignment size for memory pool and message queue */
-#define RT_ALIGN_SIZE           8
-
-/* The name length of the kernel object */
-#define RT_NAME_MAX             8
-
-/* The byte order */
-#define RT_BIG_ENDIAN           0
-#define RT_LITTLE_ENDIAN        1
-#define RT_BYTE_ORDER           RT_LITTLE_ENDIAN
-
-/* The CPU stack alignment size */
 #define RT_CPUS_NR              1
 
-/* ======================== Memory Management ================ */
-
-/* Dynamic heap management */
-#define RT_USING_HEAP
-
-/* The size of the heap. 512 KB as default */
-#define RT_HW_HEAP_BEGIN        (void*)&__heap_start
-#define RT_HW_HEAP_END          (void*)&__heap_end
-
-/* ======================== Hook Support ===================== */
-
-/* Using hook */
+/* Kernel Features */
 #define RT_USING_HOOK
+#define RT_USING_IDLE_HOOK
 
-/* Idle hook */
-/* #define RT_USING_IDLE_HOOK */
+/* Memory Management */
+#define RT_USING_HEAP
+#define RT_HEAP_SIZE            (512 * 1024)
+#define RT_USING_MEMHEAP
+#define RT_USING_MEMPOOL
+#define RT_USING_SLAB
+#define RT_USING_SLAB_AS_HEAP
 
-/* ======================== Software Timer ================== */
+/* Thread */
+#define RT_THREAD_PRIORITY_MAX  32
+#define RT_NAME_MAX             8
+#define RT_ALIGN_SIZE           8
 
-/* Using software timer */
-#define RT_USING_TIMER
-
-/* The priority of timer thread */
-#define RT_TIMER_THREAD_PRIO        25
-
-/* The stack size of timer thread */
-#define RT_TIMER_THREAD_STACK_SIZE  1024
-
-/* ======================== IPC Mechanisms ================== */
-
-/* Using semaphore */
+/* IPC */
 #define RT_USING_SEMAPHORE
-
-/* Using mutex */
 #define RT_USING_MUTEX
-
-/* Using event */
 #define RT_USING_EVENT
-
-/* Using mailbox */
 #define RT_USING_MAILBOX
-
-/* Using message queue */
 #define RT_USING_MESSAGEQUEUE
 
-/* ======================== Debug Options =================== */
+/* Timer */
+#define RT_USING_TIMER_SOFT
+#define RT_TIMER_THREAD_PRIO    4
+#define RT_TIMER_THREAD_STACK_SIZE  1024
 
-/* Enable debug */
-/* #define RT_DEBUG */
-
-/* Enable init function call */
-#define RT_USING_COMPONENTS_INIT
-
-/* Using user main */
-/* #define RT_USING_USER_MAIN */
-
-/* ======================== Device System =================== */
-
-/* Using device system */
-/* #define RT_USING_DEVICE */
-
-/* ======================== Console ========================= */
-
-/* Using console */
+/* Console */
 #define RT_USING_CONSOLE
+#define RT_CONSOLEBUF_SIZE      256
+#define RT_CONSOLE_DEVICE_NAME  "mmuart1"
 
-/* The buffer size of console */
-#define RT_CONSOLEBUF_SIZE      128
+/* Idle Thread */
+#define IDLE_THREAD_STACK_SIZE  1024
 
-/* ======================== libc Interface ================== */
+/* Main Thread (for rt_application_init) */
+#define RT_USING_HEAP
+#define RT_MAIN_THREAD_STACK_SIZE   4096
+#define RT_MAIN_THREAD_PRIORITY     10
 
-/* Using libc */
-/* #define RT_USING_LIBC */
+/* Kernel Service */
+#define RT_USING_COMPONENTS_INIT
+#define RT_KSERVICE_USING_STDLIB
 
-/* ======================== Power Management ================ */
+/* FinSH */
+// #include "finsh_config.h"
+#define RT_USING_FINSH
+#define FINSH_USING_MSH
+#define FINSH_USING_MSH_ONLY
+#define FINSH_USING_SYMTAB
+#define FINSH_USING_DESCRIPTION
+#define FINSH_THREAD_PRIORITY   21
+#define FINSH_THREAD_STACK_SIZE 2048
 
-/* Using power management */
-/* #define RT_USING_PM */
+// #define RT_USING_USER_MAIN
 
-/* ======================== Architecture ==================== */
-
-/* RISC-V architecture */
-#define ARCH_RISCV
-#define ARCH_RISCV64
-
-/* ======================== Compiler ======================== */
-#define RT_USING_NEWLIBC
-
-#endif /* RTCONFIG_H */
+#endif /* RT_CONFIG_H__ */

@@ -536,7 +536,20 @@ trap_vector:
     STORE t4,29*REGBYTES(sp)
     STORE t5,30*REGBYTES(sp)
     STORE t6,31*REGBYTES(sp)
+#ifdef USING_RTTHREAD
+    /*
+     * RT-Thread: snapshot hardware mepc/mstatus into unused HAL frame slots
+     * before the C handler may clobber t0/t1. HAL[0] is unused, HAL[3] holds
+     * gp but we overwrite it here; RTT restore (context_gcc.S) does not reload
+     * x3 (gp) so overwriting HAL[3] is safe.
+     */
+    csrr t0, mepc
+    csrr t1, mstatus
+    STORE t0, 0*REGBYTES(sp)   /* HAL[0] = original mepc (will become RTT epc) */
+    STORE t1, 3*REGBYTES(sp)   /* HAL[3] = original mstatus (will move to RTT[2]) */
+#endif
     # Invoke the handler.
+    # 原有标准中断 C 处理入口
     mv a0, sp                          # a0 <- regs
     # Please note: mtval is the newer name for register mbadaddr
     # If you get a compile failure here, use the older name
@@ -547,6 +560,43 @@ trap_vector:
     csrr a1, mtval           # useful for anaysis when things go wrong
     csrr a2, mepc
     jal trap_from_machine_mode
+
+#ifdef USING_RTTHREAD
+    /*
+     * RT-Thread: check if a thread switch was requested inside the ISR.
+     * If so, convert the HAL frame in-place to RTT format and jump to
+     * the RTT context-switch exit (bypassing HAL restore_regs + mret).
+     *
+     * HAL frame after Part A:  [0]=mepc, [1]=ra, [2]=old_sp,
+     *   [3]=mstatus, [4]=tp, [5]=t0, ..., [31]=t6
+     * RTT frame needed:        [0]=epc, [1]=ra, [2]=mstatus,
+     *   [3]=unused, [4]=tp, [5]=t0, ..., [31]=t6
+     *
+     * Only [2] differs: HAL[2]=old_sp, RTT[2]=mstatus.
+     * Move mstatus from HAL[3] to RTT[2]; HAL[0] already holds mepc.
+     * The rest of the register offsets are identical.
+     */
+    la    t2, rt_thread_switch_interrupt_flag
+    lw    t3, 0(t2)
+    beqz  t3, restore_regs           /* no switch requested */
+    sw    zero, 0(t2)                 /* clear flag */
+
+    /* fixup: move mstatus from HAL[3] to RTT[2] */
+    LOAD  t1, 3*REGBYTES(sp)
+    STORE t1, 2*REGBYTES(sp)         /* RTT[2] = mstatus (MPIE bit preserved) */
+
+    /* store converted (now RTT-format) frame pointer to from_thread->sp */
+    la    t0, rt_interrupt_from_thread
+    LOAD  t2, 0(t0)
+    STORE sp, 0(t2)
+
+    /* load to_thread sp and jump to RTT unified restore */
+    la    t0, rt_interrupt_to_thread
+    LOAD  t2, 0(t0)
+    LOAD  sp, 0(t2)
+
+    j     rt_hw_context_switch_exit
+#endif
 
 restore_regs:
     # Restore all of the registers.

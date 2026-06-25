@@ -157,6 +157,18 @@ SECTIONS
         *(.srodata.cst16) *(.srodata.cst8) *(.srodata.cst4) *(.srodata.cst2)
         *(.srodata*)
 
+        /* ====== FinSH ====== */
+        . = ALIGN(0x4);
+        __rt_init_rti_start = .;
+        KEEP(*(SORT(.rti_fn*)));
+        __rt_init_rti_end = .;
+
+        . = ALIGN(0x4);
+        __fsymtab_start = .;
+        KEEP(*(FSymTab*));
+        __fsymtab_end = .;
+        /* ====== FinSH ====== */
+
         . = ALIGN(0x10);
         __text_end = .;
     } > ddr_cached_32bit

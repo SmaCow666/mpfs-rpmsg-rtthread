@@ -17,10 +17,17 @@ SRCS += \
 	src/middleware/RTThread/rt-thread/src/mem.c \
 	src/middleware/RTThread/rt-thread/src/object.c \
 	src/middleware/RTThread/rt-thread/src/scheduler.c \
+	src/middleware/RTThread/rt-thread/src/slab.c \
 	src/middleware/RTThread/rt-thread/src/thread.c \
 	src/middleware/RTThread/rt-thread/src/timer.c \
 	src/middleware/RTThread/rt-thread/libcpu/risc-v/common/cpuport.c \
 	src/middleware/RTThread/board/board.c \
+	src/middleware/RTThread/board/ringbuf.c \
+	src/middleware/RTThread/rt-thread/components/finsh/cmd.c \
+	src/middleware/RTThread/rt-thread/components/finsh/msh_file.c \
+	src/middleware/RTThread/rt-thread/components/finsh/msh_parse.c \
+	src/middleware/RTThread/rt-thread/components/finsh/msh.c \
+	src/middleware/RTThread/rt-thread/components/finsh/shell.c \
 
 # --- Assembly Source Files ---
 ASM_SRCS += \
@@ -32,3 +39,4 @@ INCLUDES += \
 	-Isrc/middleware/config \
 	-Isrc/middleware/RTThread/rt-thread/libcpu/risc-v/common \
 	-Isrc/middleware/RTThread/board \
+	-Isrc/middleware/RTThread/rt-thread/components/finsh \
